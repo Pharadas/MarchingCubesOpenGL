@@ -14,6 +14,7 @@
 #include <vector>
 #include <FastNoiseLite.h>
 #include <iostream>
+#include <bitset>
 
 #include <texture.h>
 #include <VBOVOA.h>
@@ -21,6 +22,7 @@
 #include <settings.h>
 #include <setup.h>
 #include <computationStuff/worldObject.h>
+#include <computationStuff/marching_cubes.h>
 
 // void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 // void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
@@ -57,7 +59,7 @@ int main()
     Shader lightCubeShader;
 	lightCubeShader.bindShader("shaders/lightingShaders/light_cube.vs", "shaders/lightingShaders/light_cube.fs");
 
-	std::vector<float> originalVertices {
+	std::vector<float> cubeVertices {
 		// positions		  // normals
         -0.5f, -0.5f, -0.5f, // 0.0f,  0.0f, -1.0f,
          0.5f, -0.5f, -0.5f, // 0.0f,  0.0f, -1.0f,
@@ -102,8 +104,15 @@ int main()
         -0.5f,  0.5f, -0.5f, // 0.0f,  1.0f,  0.0f
 	};
 
+	std::string byteString = "";
+	std::cout << "input marching cube value in binary" << std::endl;
+	std::cin >> byteString;
+
+	std::bitset<8> activeVertices(byteString);
+	std::vector<float> originalVertices = getMarchingCubes(activeVertices);
+
     Shader lightingShader;
-	WorldObject testCube(originalVertices);
+	WorldObject testCube(cubeVertices);
 	testCube.currentSettings = currentSettings;
 	testCube.objectShader = lightingShader;
 	testCube.initializeShader("shaders/lightingShaders/colors.vs", "shaders/lightingShaders/colors.fs");
@@ -137,8 +146,8 @@ int main()
 	// 		for (int z = -16; z < 16; z++) {
 	// 			float thisNoiseValue = noise.GetNoise((float) x, (float) y, (float) z);
 	// 			if (thisNoiseValue > -0.0603221) {
-	// 				if (sqrt(pow(x, 2) + pow(y, 2) + pow(z, 2)) < 12) {
-	// 					vertices
+	// 				if (sqrt(pow(x, 2) + pow(y, 2) + pow(z, 2)) < 13) {
+	// 					cubePositions.push_back();
 	// 				}
 	// 			}
 	// 		}
@@ -146,7 +155,7 @@ int main()
 	// }
 
 	VBOVOA cubeVBOVOA;
-	cubeVBOVOA.genAndBindVBO(originalVertices);
+	cubeVBOVOA.genAndBindVBO(cubeVertices);
 	cubeVBOVOA.generateAndBindVertexArrays();
 	std::cout << "cube VOA" << std::endl;
 	cubeVBOVOA.enableAttributes(0, 3);
