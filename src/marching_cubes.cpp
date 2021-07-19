@@ -11,10 +11,11 @@ glm::vec3 verticesPositions[] = {
 	glm::vec3(-0.5, -0.5, 0.5),
 	glm::vec3(0.5, -0.5, 0.5),
 	glm::vec3(0.5, -0.5, -0.5),
+
 	glm::vec3(-0.5, 0.5, -0.5),
 	glm::vec3(-0.5, 0.5, 0.5),
 	glm::vec3(0.5, 0.5, 0.5),
-	glm::vec3(0.5, 0.5, -0.5)
+	glm::vec3(0.5, 0.5, -0.5),
 };
 
 std::pair<int, int> edges[] = {
@@ -29,7 +30,7 @@ std::pair<int, int> edges[] = {
 	std::make_pair(4, 0),
 	std::make_pair(5, 1),
 	std::make_pair(6, 2),
-	std::make_pair(7, 3)
+	std::make_pair(7, 3),
 };
 
 int triTable[256][16] = {
@@ -291,12 +292,11 @@ int triTable[256][16] = {
 	{ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 }
 };
 
-std::vector<float> getMarchingCubes(std::bitset<8> activeVertices) {
+std::vector<float> getMarchingCubes(std::bitset<8> activeVertices, glm::vec3 position) {
 	std::vector<float> marchingCubeVertices = {};
 	unsigned int triTableIndex = activeVertices.to_ulong();
 
 	for (int i = 0; i < 16; i += 3) {
-		std::cout << triTableIndex << std::endl;
 		if (triTable[triTableIndex][i] == -1)
 			return marchingCubeVertices;
 
@@ -304,20 +304,17 @@ std::vector<float> getMarchingCubes(std::bitset<8> activeVertices) {
 		glm::vec3 secondVertex((verticesPositions[edges[triTable[triTableIndex][i + 1]].first] + verticesPositions[edges[triTable[triTableIndex][i + 1]].second]) * 0.5f);
 		glm::vec3 thirdVertex((verticesPositions[edges[triTable[triTableIndex][i + 2]].first] + verticesPositions[edges[triTable[triTableIndex][i + 2]].second]) * 0.5f);
 
-		marchingCubeVertices.push_back(firstVertex.x);
-		marchingCubeVertices.push_back(firstVertex.y);
-		marchingCubeVertices.push_back(firstVertex.z);
-		std::cout << firstVertex.x << " " << firstVertex.y << " " << firstVertex.z << std::endl;
+		marchingCubeVertices.push_back(position.x + firstVertex.x);
+		marchingCubeVertices.push_back(position.y + firstVertex.y);
+		marchingCubeVertices.push_back(position.z + firstVertex.z);
 
-		marchingCubeVertices.push_back(secondVertex.x);
-		marchingCubeVertices.push_back(secondVertex.y);
-		marchingCubeVertices.push_back(secondVertex.z);
-		std::cout << secondVertex.x << " " << secondVertex.y << " " << secondVertex.z << std::endl;
+		marchingCubeVertices.push_back(position.x + secondVertex.x);
+		marchingCubeVertices.push_back(position.y + secondVertex.y);
+		marchingCubeVertices.push_back(position.z + secondVertex.z);
 
-		marchingCubeVertices.push_back(thirdVertex.x);
-		marchingCubeVertices.push_back(thirdVertex.y);
-		marchingCubeVertices.push_back(thirdVertex.z);
-		std::cout << thirdVertex.x << " " << thirdVertex.y << " " << thirdVertex.z << std::endl;
+		marchingCubeVertices.push_back(position.x + thirdVertex.x);
+		marchingCubeVertices.push_back(position.y + thirdVertex.y);
+		marchingCubeVertices.push_back(position.z + thirdVertex.z);
 	}
 
 	return marchingCubeVertices;
