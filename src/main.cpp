@@ -15,6 +15,8 @@
 #include <FastNoiseLite.h>
 #include <iostream>
 #include <bitset>
+#include <map>
+#include <tuple>
 
 #include <texture.h>
 #include <VBOVOA.h>
@@ -104,60 +106,138 @@ int main()
         -0.5f,  0.5f, -0.5f, // 0.0f,  1.0f,  0.0f
 	};
 
-	std::string byteString = "";
-	std::cout << "input marching cube value in binary" << std::endl;
-	std::cin >> byteString;
+	// noiseShit
+	FastNoiseLite noise;
+	noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2S);
+	noise.SetSeed(1);
+	noise.SetNoiseType(FastNoiseLite::NoiseType_ValueCubic);
+	noise.SetFractalOctaves(1);
+	noise.SetFrequency(1);
 
-	std::bitset<8> activeVertices(byteString);
-	std::vector<float> originalVertices = getMarchingCubes(activeVertices);
+	std::vector<glm::vec3> cubePositions = {};
+	std::map<std::tuple<int, int, int>, char> marchingCubesValues = {};
+
+	int size = 10;
+	std::vector<float> originalVertices = {};
+
+// sqrt(pow(x, 2) + pow(y, 2) + pow(z, 2)) < size
+
+	for (int x = -size; x < size; x++) {
+		for (int y = -size; y < size; y++) {
+			for (int z = -size; z < size; z++) {
+				// float thisNoiseValue = noise.GetNoise((float) x, (float) y, (float) z);
+				std::string byteString = "";
+				std::vector<float> marchingCubesVertices;
+
+				byteString += (noise.GetNoise((float) x + 1, (float) y + 1, (float) z) > -0.0603221) ? "1" : "0";
+				byteString += (noise.GetNoise((float) x + 1, (float) y + 1, (float) z + 1) > -0.0603221) ? "1" : "0";
+				byteString += (noise.GetNoise((float) x, (float) y + 1, (float) z + 1) > -0.0603221) ? "1" : "0";
+				byteString += (noise.GetNoise((float) x, (float) y + 1, (float) z) > -0.0603221) ? "1" : "0";
+				byteString += (noise.GetNoise((float) x + 1, (float) y, (float) z) > -0.0603221) ? "1" : "0";
+				byteString += (noise.GetNoise((float) x + 1, (float) y, (float) z + 1) > -0.0603221) ? "1" : "0";
+				byteString += (noise.GetNoise((float) x, (float) y, (float) z + 1) > -0.0603221) ? "1" : "0";
+				byteString += (noise.GetNoise((float) x, (float) y, (float) z) > -0.0603221) ? "1" : "0";
+
+				std::bitset<8> activeVertices(byteString);
+				marchingCubesVertices = getMarchingCubes(activeVertices, glm::vec3(x, y, z));
+				originalVertices.insert(originalVertices.end(), marchingCubesVertices.begin(), marchingCubesVertices.end());
+				// if (thisNoiseValue > -0.0603221) {
+				// if ((thisNoiseValue > -0.0) && (sqrt(pow(x, 2) + pow(y, 2) + pow(z, 2)) < size)) {
+				// 	marchingCubesValues[std::make_tuple(x, y, z)] = '1';
+				// } else {
+				// 	marchingCubesValues[std::make_tuple(x, y, z)] = '0';
+				// }
+			}
+		}
+	}
+
+	// std::string byteString = "";
+	// std::cin >> byteString;
+	// // std::string byteString = "11000000";
+	// std::bitset<8> activeVertices(byteString);
+	// originalVertices = getMarchingCubes(activeVertices, glm::vec3(0, 0, 0));
+
+	// for (int x = -size; x < size - 1; x++) {
+	// 	for (int y = -size; y < size - 1; y++) {
+	// 		for (int z = -size; z < size - 1; z++) {
+	// 			std::string byteString = "";
+
+	// 			byteString += marchingCubesValues[std::make_tuple(x, 	  y, 	 z)];
+	// 			byteString += marchingCubesValues[std::make_tuple(x	, y, 	 z - 1)];
+	// 			byteString += marchingCubesValues[std::make_tuple(x - 1, y, 	 z - 1)];
+	// 			byteString += marchingCubesValues[std::make_tuple(x - 1, y, 	 z)];
+	// 			byteString += marchingCubesValues[std::make_tuple(x, 	  y - 1, z)];
+	// 			byteString += marchingCubesValues[std::make_tuple(x	, y - 1, z - 1)];
+	// 			byteString += marchingCubesValues[std::make_tuple(x - 1, y - 1, z - 1)];
+	// 			byteString += marchingCubesValues[std::make_tuple(x - 1, y - 1, z)];
+
+	// 			// std::cout << byteString << std::endl;
+
+	// 			std::bitset<8> activeVertices(byteString);
+	// 			std::vector<float> marchingCubesVertices;
+
+	// 			marchingCubesVertices = getMarchingCubes(activeVertices, glm::vec3(x, y, z));
+	// 			originalVertices.insert(originalVertices.end(), marchingCubesVertices.begin(), marchingCubesVertices.end());
+	// 		}
+	// 	}
+	// }
+
+	// for (auto i : originalVertices)
 
     Shader lightingShader;
-	WorldObject testCube(cubeVertices);
+	WorldObject testCube(originalVertices);
 	testCube.currentSettings = currentSettings;
 	testCube.objectShader = lightingShader;
 	testCube.initializeShader("shaders/lightingShaders/colors.vs", "shaders/lightingShaders/colors.fs");
 	testCube.addNormalizedTriangles();
-	testCube.objectLightingAttributes.lightPosition.second = glm::vec3(1.2f, 1.0f, 2.0f);
+	testCube.objectLightingAttributes.lightPosition.second = glm::vec3(1.0f, 1.0f, 2.0f);
 	testCube.objectLightingAttributes.lightAmbient.second = glm::vec3(0.5, 0.5, 0.5);
 	testCube.objectLightingAttributes.lightDiffuse.second = glm::vec3(0.1f, 0.2f, 0.3f);
 	testCube.objectLightingAttributes.lightSpecular.second = glm::vec3(1.0f, 1.0f, 1.0f);
-	testCube.objectLightingAttributes.materialAmbient.second = glm::vec3(1.0f, 0.5f, 0.31f);
+
+	testCube.objectLightingAttributes.materialAmbient.second = glm::vec3(0.3f, 0.3f, 0.3f);
 	testCube.objectLightingAttributes.materialDiffuse.second = glm::vec3(1.0f, 0.5f, 0.31f);
 	testCube.objectLightingAttributes.materialSpecular.second = glm::vec3(0.5f, 0.5f, 0.5f);
 	testCube.objectLightingAttributes.materialShininess.second = 32.0f;
+
+	glm::vec3 debugCubesPositions[] = {
+		glm::vec3(-0.5, -0.5, -0.5),
+		glm::vec3(-0.5, -0.5, 0.5),
+		glm::vec3(0.5, -0.5, 0.5),
+		glm::vec3(0.5, -0.5, -0.5),
+
+		glm::vec3(-0.5, 0.5, -0.5),
+		glm::vec3(-0.5, 0.5, 0.5),
+		glm::vec3(0.5, 0.5, 0.5),
+		glm::vec3(0.5, 0.5, -0.5),
+	};
+
+	WorldObject debugCubeObject(cubeVertices);
+
+	debugCubeObject.currentSettings = currentSettings;
+	debugCubeObject.objectShader = lightingShader;
+	debugCubeObject.initializeShader("shaders/lightingShaders/colors.vs", "shaders/lightingShaders/colors.fs");
+	debugCubeObject.addNormalizedTriangles();
+
+	debugCubeObject.objectLightingAttributes.lightPosition.second = glm::vec3(1.0f, 1.0f, 2.0f);
+	debugCubeObject.objectLightingAttributes.lightAmbient.second = glm::vec3(0.5, 0.5, 0.5);
+	debugCubeObject.objectLightingAttributes.lightDiffuse.second = glm::vec3(0.1f, 0.2f, 0.3f);
+	debugCubeObject.objectLightingAttributes.lightSpecular.second = glm::vec3(1.0f, 1.0f, 1.0f);
+
+	debugCubeObject.objectLightingAttributes.materialAmbient.second = glm::vec3(0.3f, 0.3f, 0.3f);
+	debugCubeObject.objectLightingAttributes.materialDiffuse.second = glm::vec3(1.0f, 0.5f, 0.31f);
+	debugCubeObject.objectLightingAttributes.materialSpecular.second = glm::vec3(0.5f, 0.5f, 0.5f);
+	debugCubeObject.objectLightingAttributes.materialShininess.second = 32.0f;
 
 	// float vertices[(int) normalizedVertices.size()];
 	// for (int i = 0; i < (int) normalizedVertices.size(); i++) {
 	// 	vertices[i] = normalizedVertices[i];
 	// }
 
-	// noiseShit
-	FastNoiseLite noise;
-	noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2S);
-	noise.SetSeed(rand());
-	noise.SetNoiseType(FastNoiseLite::NoiseType_ValueCubic);
-	noise.SetFractalOctaves(4);
-	noise.SetFrequency(4);
-
-	// std::vector<glm::vec3> cubePositions = {};
-
-	// for (int x = -16; x < 16; x++) {
-	// 	for (int y = -16; y < 16; y++) {
-	// 		for (int z = -16; z < 16; z++) {
-	// 			float thisNoiseValue = noise.GetNoise((float) x, (float) y, (float) z);
-	// 			if (thisNoiseValue > -0.0603221) {
-	// 				if (sqrt(pow(x, 2) + pow(y, 2) + pow(z, 2)) < 13) {
-	// 					cubePositions.push_back();
-	// 				}
-	// 			}
-	// 		}
-	// 	}
-	// }
-
 	VBOVOA cubeVBOVOA;
 	cubeVBOVOA.genAndBindVBO(cubeVertices);
 	cubeVBOVOA.generateAndBindVertexArrays();
-	std::cout << "cube VOA" << std::endl;
+	// std::cout << "cube VOA" << std::endl;
 	cubeVBOVOA.enableAttributes(0, 3);
 
 	Texture currentTexture;
@@ -183,8 +263,25 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         // glBindTexture(GL_TEXTURE_2D, currentTexture.texture);
 
+		// for (auto i : cubePositions) {
 		testCube.objectLightingAttributes.lightPosition.second = lightPos;
-		testCube.renderObjectToScreen(camera);
+		testCube.renderObjectToScreen(camera, glm::vec3(0, 0, 0), glm::vec3(1.0f));
+		// }
+
+		// for (int i = 0; i < 8; i++) {
+		// 	if (byteString[i] == '1') {
+		// 		debugCubeObject.objectLightingAttributes.materialAmbient.second = glm::vec3(0.0f, 0.8f, 0.0f);
+		// 		debugCubeObject.renderObjectToScreen(camera, debugCubesPositions[i], glm::vec3(0.1f));
+		// 	} else {
+		// 		debugCubeObject.objectLightingAttributes.materialAmbient.second = glm::vec3(0.8f, 0.0f, 0.0f);
+		// 		debugCubeObject.renderObjectToScreen(camera, debugCubesPositions[i], glm::vec3(0.1f));
+		// 	}
+		// }
+
+		// for (int i = 0; i < 8; i++) {
+		// 	debugCubeObject[i].renderObjectToScreen(camera, debugCubesPositions[i], glm::vec3(0.1f));
+		// 	std::cout << debugCubesPositions[i].x << ' ' << debugCubesPositions[i].y << ' ' << debugCubesPositions[i].z << std::endl;
+		// }
 
 		// // pass projection matrix to shader (note that in this case it could change every frame)
 		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float) currentSettings.SCR_WIDTH / (float) currentSettings.SCR_HEIGHT, 0.1f, 100.0f);
@@ -192,9 +289,10 @@ int main()
 
 		glm::mat4 model = glm::mat4(1.0f);
 		const float radius = 32.0f;
-		float lightX = sin(glfwGetTime() * 0.1) * radius;
-		float lightZ = cos(glfwGetTime() * 0.1) * radius;
-		lightPos = glm::vec3(lightX, 1.0f, lightZ);
+		// float lightX = sin(glfwGetTime() * 0.1) * radius;
+		// float lightZ = cos(glfwGetTime() * 0.1) * radius;
+		// lightPos = glm::vec3(lightX, 1.0f, lightZ);
+		lightPos.z = 10.0f;
 		model = glm::translate(model, lightPos);
 		model = glm::scale(model, glm::vec3(0.2f));
 
