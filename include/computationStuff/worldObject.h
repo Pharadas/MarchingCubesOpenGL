@@ -29,7 +29,7 @@ class WorldObject {
 		bindVBOVBA();
 	}
 
-	void renderObjectToScreen(Camera camera) {
+	void renderObjectToScreen(Camera camera, glm::vec3 i, glm::vec3 scale) {
 		objectShader.use();
 		objectShader.setVec3("viewPos", camera.Position);
 		objectShader.setVec3(objectLightingAttributes.lightPosition.first,
@@ -53,7 +53,9 @@ class WorldObject {
 		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float) currentSettings.SCR_WIDTH / (float) currentSettings.SCR_HEIGHT, 0.1f, 100.0f);
 		glm::mat4 view = camera.GetViewMatrix();
 		glm::mat4 model = glm::mat4(1.0f);
-		// model = glm::rotate(model, glm::radians(rotation), glm::vec3(1.0f, 0.3f, 0.5f));
+		model = glm::translate(model, i);
+		model = glm::scale(model, scale);
+		model = glm::rotate(model, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
 		objectShader.setMat4("projection", projection);
 		objectShader.setMat4("view", view);
