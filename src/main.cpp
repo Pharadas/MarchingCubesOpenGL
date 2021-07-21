@@ -28,7 +28,7 @@
 
 // void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 // void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
-void processInput(GLFWwindow *window);
+void processInput(GLFWwindow* window, WorldObject testCube, std::vector<float> originalVertices);
 glm::vec3 GetNormal(glm::vec3 v1, glm::vec3 v2, glm::vec3 v3);
 
 OpenGLSettings currentSettings;
@@ -45,6 +45,7 @@ float lastFrame = 0.0f;
 
 // lighting
 glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
+std::map<std::tuple<int, int, int>, char> marchingCubesValues = {};
 
 int main()
 {
@@ -115,74 +116,48 @@ int main()
 	noise.SetFrequency(1);
 
 	std::vector<glm::vec3> cubePositions = {};
-	std::map<std::tuple<int, int, int>, char> marchingCubesValues = {};
 
-	int size = 10;
+	int size = 12;
 	std::vector<float> originalVertices = {};
-
-// sqrt(pow(x, 2) + pow(y, 2) + pow(z, 2)) < size
 
 	for (int x = -size; x < size; x++) {
 		for (int y = -size; y < size; y++) {
 			for (int z = -size; z < size; z++) {
-				// float thisNoiseValue = noise.GetNoise((float) x, (float) y, (float) z);
-				std::string byteString = "";
-				std::vector<float> marchingCubesVertices;
+				float thisNoiseValue = noise.GetNoise((float) x, (float) y, (float) z);
 
-				byteString += (noise.GetNoise((float) x + 1, (float) y + 1, (float) z) > -0.0603221) ? "1" : "0";
-				byteString += (noise.GetNoise((float) x + 1, (float) y + 1, (float) z + 1) > -0.0603221) ? "1" : "0";
-				byteString += (noise.GetNoise((float) x, (float) y + 1, (float) z + 1) > -0.0603221) ? "1" : "0";
-				byteString += (noise.GetNoise((float) x, (float) y + 1, (float) z) > -0.0603221) ? "1" : "0";
-				byteString += (noise.GetNoise((float) x + 1, (float) y, (float) z) > -0.0603221) ? "1" : "0";
-				byteString += (noise.GetNoise((float) x + 1, (float) y, (float) z + 1) > -0.0603221) ? "1" : "0";
-				byteString += (noise.GetNoise((float) x, (float) y, (float) z + 1) > -0.0603221) ? "1" : "0";
-				byteString += (noise.GetNoise((float) x, (float) y, (float) z) > -0.0603221) ? "1" : "0";
-
-				std::bitset<8> activeVertices(byteString);
-				marchingCubesVertices = getMarchingCubes(activeVertices, glm::vec3(x, y, z));
-				originalVertices.insert(originalVertices.end(), marchingCubesVertices.begin(), marchingCubesVertices.end());
-				// if (thisNoiseValue > -0.0603221) {
-				// if ((thisNoiseValue > -0.0) && (sqrt(pow(x, 2) + pow(y, 2) + pow(z, 2)) < size)) {
-				// 	marchingCubesValues[std::make_tuple(x, y, z)] = '1';
-				// } else {
-				// 	marchingCubesValues[std::make_tuple(x, y, z)] = '0';
-				// }
+				if ((thisNoiseValue > -0.0) && (sqrt(pow(x, 2) + pow(y, 2) + pow(z, 2)) < size)) {
+					marchingCubesValues[std::make_tuple(x, y, z)] = '1';
+				} else {
+					marchingCubesValues[std::make_tuple(x, y, z)] = '0';
+				}
 			}
 		}
 	}
 
-	// std::string byteString = "";
-	// std::cin >> byteString;
-	// // std::string byteString = "11000000";
-	// std::bitset<8> activeVertices(byteString);
-	// originalVertices = getMarchingCubes(activeVertices, glm::vec3(0, 0, 0));
+	for (int x = -size; x < size - 1; x++) {
+		for (int y = -size; y < size - 1; y++) {
+			for (int z = -size; z < size - 1; z++) {
+				std::string byteString = "";
 
-	// for (int x = -size; x < size - 1; x++) {
-	// 	for (int y = -size; y < size - 1; y++) {
-	// 		for (int z = -size; z < size - 1; z++) {
-	// 			std::string byteString = "";
+				byteString += marchingCubesValues[std::make_tuple(x + 1,  y + 1,  z)];
+				byteString += marchingCubesValues[std::make_tuple(x + 1,  y + 1,  z + 1)];
+				byteString += marchingCubesValues[std::make_tuple(x,  y + 1,  z + 1)];
+				byteString += marchingCubesValues[std::make_tuple(x,  y + 1,  z)];
+				byteString += marchingCubesValues[std::make_tuple(x + 1,  y,  z)];
+				byteString += marchingCubesValues[std::make_tuple(x + 1,  y,  z + 1)];
+				byteString += marchingCubesValues[std::make_tuple(x,  y,  z + 1)];
+				byteString += marchingCubesValues[std::make_tuple(x,  y,  z)];
 
-	// 			byteString += marchingCubesValues[std::make_tuple(x, 	  y, 	 z)];
-	// 			byteString += marchingCubesValues[std::make_tuple(x	, y, 	 z - 1)];
-	// 			byteString += marchingCubesValues[std::make_tuple(x - 1, y, 	 z - 1)];
-	// 			byteString += marchingCubesValues[std::make_tuple(x - 1, y, 	 z)];
-	// 			byteString += marchingCubesValues[std::make_tuple(x, 	  y - 1, z)];
-	// 			byteString += marchingCubesValues[std::make_tuple(x	, y - 1, z - 1)];
-	// 			byteString += marchingCubesValues[std::make_tuple(x - 1, y - 1, z - 1)];
-	// 			byteString += marchingCubesValues[std::make_tuple(x - 1, y - 1, z)];
+				// std::cout << byteString << std::endl;
 
-	// 			// std::cout << byteString << std::endl;
+				std::bitset<8> activeVertices(byteString);
+				std::vector<float> marchingCubesVertices;
 
-	// 			std::bitset<8> activeVertices(byteString);
-	// 			std::vector<float> marchingCubesVertices;
-
-	// 			marchingCubesVertices = getMarchingCubes(activeVertices, glm::vec3(x, y, z));
-	// 			originalVertices.insert(originalVertices.end(), marchingCubesVertices.begin(), marchingCubesVertices.end());
-	// 		}
-	// 	}
-	// }
-
-	// for (auto i : originalVertices)
+				marchingCubesVertices = getMarchingCubes(activeVertices, glm::vec3(x, y, z));
+				originalVertices.insert(originalVertices.end(), marchingCubesVertices.begin(), marchingCubesVertices.end());
+			}
+		}
+	}
 
     Shader lightingShader;
 	WorldObject testCube(originalVertices);
@@ -199,40 +174,6 @@ int main()
 	testCube.objectLightingAttributes.materialDiffuse.second = glm::vec3(1.0f, 0.5f, 0.31f);
 	testCube.objectLightingAttributes.materialSpecular.second = glm::vec3(0.5f, 0.5f, 0.5f);
 	testCube.objectLightingAttributes.materialShininess.second = 32.0f;
-
-	glm::vec3 debugCubesPositions[] = {
-		glm::vec3(-0.5, -0.5, -0.5),
-		glm::vec3(-0.5, -0.5, 0.5),
-		glm::vec3(0.5, -0.5, 0.5),
-		glm::vec3(0.5, -0.5, -0.5),
-
-		glm::vec3(-0.5, 0.5, -0.5),
-		glm::vec3(-0.5, 0.5, 0.5),
-		glm::vec3(0.5, 0.5, 0.5),
-		glm::vec3(0.5, 0.5, -0.5),
-	};
-
-	WorldObject debugCubeObject(cubeVertices);
-
-	debugCubeObject.currentSettings = currentSettings;
-	debugCubeObject.objectShader = lightingShader;
-	debugCubeObject.initializeShader("shaders/lightingShaders/colors.vs", "shaders/lightingShaders/colors.fs");
-	debugCubeObject.addNormalizedTriangles();
-
-	debugCubeObject.objectLightingAttributes.lightPosition.second = glm::vec3(1.0f, 1.0f, 2.0f);
-	debugCubeObject.objectLightingAttributes.lightAmbient.second = glm::vec3(0.5, 0.5, 0.5);
-	debugCubeObject.objectLightingAttributes.lightDiffuse.second = glm::vec3(0.1f, 0.2f, 0.3f);
-	debugCubeObject.objectLightingAttributes.lightSpecular.second = glm::vec3(1.0f, 1.0f, 1.0f);
-
-	debugCubeObject.objectLightingAttributes.materialAmbient.second = glm::vec3(0.3f, 0.3f, 0.3f);
-	debugCubeObject.objectLightingAttributes.materialDiffuse.second = glm::vec3(1.0f, 0.5f, 0.31f);
-	debugCubeObject.objectLightingAttributes.materialSpecular.second = glm::vec3(0.5f, 0.5f, 0.5f);
-	debugCubeObject.objectLightingAttributes.materialShininess.second = 32.0f;
-
-	// float vertices[(int) normalizedVertices.size()];
-	// for (int i = 0; i < (int) normalizedVertices.size(); i++) {
-	// 	vertices[i] = normalizedVertices[i];
-	// }
 
 	VBOVOA cubeVBOVOA;
 	cubeVBOVOA.genAndBindVBO(cubeVertices);
@@ -255,7 +196,7 @@ int main()
 
         // input
         // -----
-        processInput(window);
+        processInput(window, testCube, originalVertices);
 
         // render
         // ------
@@ -268,22 +209,7 @@ int main()
 		testCube.renderObjectToScreen(camera, glm::vec3(0, 0, 0), glm::vec3(1.0f));
 		// }
 
-		// for (int i = 0; i < 8; i++) {
-		// 	if (byteString[i] == '1') {
-		// 		debugCubeObject.objectLightingAttributes.materialAmbient.second = glm::vec3(0.0f, 0.8f, 0.0f);
-		// 		debugCubeObject.renderObjectToScreen(camera, debugCubesPositions[i], glm::vec3(0.1f));
-		// 	} else {
-		// 		debugCubeObject.objectLightingAttributes.materialAmbient.second = glm::vec3(0.8f, 0.0f, 0.0f);
-		// 		debugCubeObject.renderObjectToScreen(camera, debugCubesPositions[i], glm::vec3(0.1f));
-		// 	}
-		// }
-
-		// for (int i = 0; i < 8; i++) {
-		// 	debugCubeObject[i].renderObjectToScreen(camera, debugCubesPositions[i], glm::vec3(0.1f));
-		// 	std::cout << debugCubesPositions[i].x << ' ' << debugCubesPositions[i].y << ' ' << debugCubesPositions[i].z << std::endl;
-		// }
-
-		// // pass projection matrix to shader (note that in this case it could change every frame)
+		// pass projection matrix to shader (note that in this case it could change every frame)
 		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float) currentSettings.SCR_WIDTH / (float) currentSettings.SCR_HEIGHT, 0.1f, 100.0f);
 		glm::mat4 view = camera.GetViewMatrix();
 
@@ -327,7 +253,7 @@ int main()
     return 0;
 }
 
-void processInput(GLFWwindow* window) {
+void processInput(GLFWwindow* window, WorldObject testCube, std::vector<float> originalVertices) {
 	GLdouble xPos, yPos;
 	glfwGetCursorPos(window, &xPos, &yPos);
 
@@ -350,21 +276,47 @@ void processInput(GLFWwindow* window) {
 		camera.ProcessKeyboard(UP, deltaTime);
 	if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
 		camera.ProcessKeyboard(DOWN, deltaTime);
-}
+	if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) {
+		for (int x = -4; x < 4; x++) {
+			for (int y = -4; y < 4; y++) {
+				for (int z = -4; z < 4; z++) {
+					marchingCubesValues[std::make_tuple(x, y, z)] = '0'; // falta volver a construir el original vertices del hashmap de valores
+					// testCube.worldObjectVBOVBA.rebindVBO(originalVertices);
+				}
+			}
+		}
 
-glm::vec3 GetNormal(glm::vec3 v1, glm::vec3 v2, glm::vec3 v3)
-{
-	glm::vec3 temp1, temp2;
-	glm::vec3 normal;
+		originalVertices = {};
 
-	temp1 = v1 - v2;
-	temp2 = v2 - v3;
+		for (int x = -12; x < 12 - 1; x++) {
+			for (int y = -12; y < 12 - 1; y++) {
+				for (int z = -12; z < 12 - 1; z++) {
+					std::string byteString = "";
 
-	// std::cout << temp1.x << " " << temp1.y << " " << temp1.z << std::endl;
-	// std::cout << temp2.x << " " << temp2.y << " " << temp2.z << std::endl;
-	// assume * represents cross-product
-	normal = glm::normalize(glm::cross(temp1, temp2));
-	// normal = temp1 * temp2;
+					byteString += marchingCubesValues[std::make_tuple(x + 1,  y + 1,  z)];
+					byteString += marchingCubesValues[std::make_tuple(x + 1,  y + 1,  z + 1)];
+					byteString += marchingCubesValues[std::make_tuple(x,  y + 1,  z + 1)];
+					byteString += marchingCubesValues[std::make_tuple(x,  y + 1,  z)];
+					byteString += marchingCubesValues[std::make_tuple(x + 1,  y,  z)];
+					byteString += marchingCubesValues[std::make_tuple(x + 1,  y,  z + 1)];
+					byteString += marchingCubesValues[std::make_tuple(x,  y,  z + 1)];
+					byteString += marchingCubesValues[std::make_tuple(x,  y,  z)];
 
-	return normal;
+					// std::cout << byteString << std::endl;
+
+					std::bitset<8> activeVertices(byteString);
+					std::vector<float> marchingCubesVertices;
+
+					marchingCubesVertices = getMarchingCubes(activeVertices, glm::vec3(x, y, z));
+					originalVertices.insert(originalVertices.end(), marchingCubesVertices.begin(), marchingCubesVertices.end());
+				}
+			}
+		}
+	
+		testCube.verticesVector = originalVertices;
+		testCube.floatsPerTriangle = 3;
+		testCube.addNormalizedTriangles();
+		testCube.bindVBOVBA();
+		// testCube.worldObjectVBOVBA.rebindVBO(originalVertices);
+	}
 }
