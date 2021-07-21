@@ -13,10 +13,10 @@
 
 class WorldObject {
 	private:
-	VBOVOA worldObjectVBOVBA;
-	int floatsPerTriangle = 3;
 
 	public:
+	int floatsPerTriangle = 3;
+	VBOVOA worldObjectVBOVBA;
 	Shader objectShader;
 	LightingShaderAttributes objectLightingAttributes;
 	OpenGLSettings currentSettings;
