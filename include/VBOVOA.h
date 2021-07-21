@@ -17,7 +17,7 @@ class VBOVOA {
 
 			glGenBuffers(1, &VBO);
 			glBindBuffer(GL_ARRAY_BUFFER, VBO);
-			glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+			glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); // GL_DYNAMIC_DRAW
 		}
 
 		void rebindVBO(std::vector<float> vectorVertices) {
@@ -26,8 +26,8 @@ class VBOVOA {
 				vertices[i] = vectorVertices[i];
 			}
 
+			glBindBuffer(GL_ARRAY_BUFFER, VBO);
 			glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
 		}
 
 		void generateAndBindVertexArrays() {
