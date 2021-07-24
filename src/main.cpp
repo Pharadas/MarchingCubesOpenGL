@@ -23,12 +23,14 @@
 #include <setup.h> 
 #include <settings.h>
 #include <setup.h>
-#include <computationStuff/worldObject.h>
-#include <computationStuff/marching_cubes.h>
+#include <world_objects/baseWorldObjectClass.h>
+#include <world_objects/lightingShaderObjectClass.h>
+#include <world_building/marching_cubes.h>
+#include <world_building/chunk.h>
 
 // void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 // void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
-void processInput(GLFWwindow* window, WorldObject testCube, std::vector<float> originalVertices);
+void processInput(GLFWwindow* window);
 glm::vec3 GetNormal(glm::vec3 v1, glm::vec3 v2, glm::vec3 v3);
 
 OpenGLSettings currentSettings;
@@ -36,7 +38,7 @@ OpenGLSettings currentSettings;
 float thisAngle = 0.0;
 
 // camera
-Camera camera(glm::vec3(0.0f, 3.0f, 3.0f));
+Camera camera(glm::vec3(0.0f, 0.0f, 0.0f));
 Setup thisSetup;
 
 // timing
@@ -51,16 +53,11 @@ int main()
 {
 	// settings
 	currentSettings.SCR_WIDTH = 1000;
-	currentSettings.SCR_HEIGHT = 800;
+	currentSettings.SCR_HEIGHT = 1000;
 	GLFWwindow* window = thisSetup.setupGLFWWindow(currentSettings);
 
 	camera.lastX = currentSettings.SCR_WIDTH * 0.5;
 	camera.lastY = currentSettings.SCR_HEIGHT * 0.5;
-
-    // build and compile our shader zprogram
-    // ------------------------------------
-    Shader lightCubeShader;
-	lightCubeShader.bindShader("shaders/lightingShaders/light_cube.vs", "shaders/lightingShaders/light_cube.fs");
 
 	std::vector<float> cubeVertices {
 		// positions		  // normals
@@ -107,6 +104,12 @@ int main()
         -0.5f,  0.5f, -0.5f, // 0.0f,  1.0f,  0.0f
 	};
 
+	// build and compile our shader zprogram
+    // ------------------------------------
+	WorldObject lightCube(cubeVertices, "shaders/lightingShaders/light_cube.vs", "shaders/lightingShaders/light_cube.fs", currentSettings);
+	lightPos.z = 20.0f;
+	lightCube.position = lightPos;
+
 	// noiseShit
 	FastNoiseLite noise;
 	noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2S);
@@ -115,71 +118,17 @@ int main()
 	noise.SetFractalOctaves(1);
 	noise.SetFrequency(1);
 
-	std::vector<glm::vec3> cubePositions = {};
-
-	int size = 12;
-	std::vector<float> originalVertices = {};
-
-	for (int x = -size; x < size; x++) {
-		for (int y = -size; y < size; y++) {
-			for (int z = -size; z < size; z++) {
-				float thisNoiseValue = noise.GetNoise((float) x, (float) y, (float) z);
-
-				if ((thisNoiseValue > -0.0) && (sqrt(pow(x, 2) + pow(y, 2) + pow(z, 2)) < size)) {
-					marchingCubesValues[std::make_tuple(x, y, z)] = '1';
-				} else {
-					marchingCubesValues[std::make_tuple(x, y, z)] = '0';
-				}
+	std::vector<LightingShaderObject> chunks = {};
+	int numOfChunks = 4;
+	for (int x = -numOfChunks; x < numOfChunks; x++) {
+		for (int y = -numOfChunks; y < numOfChunks; y++) {
+			for (int z = -numOfChunks; z < numOfChunks; z++) {
+				chunks.push_back(buildChunk(glm::vec3(x * 5, y * 5, z * 5), noise, 5, currentSettings));
+				// chunks.addNormalizedTriangles();
+				// LightingShaderObject testCube = buildChunk(glm::vec3(0, 0, 0), noise, 5, currentSettings);
 			}
 		}
 	}
-
-	for (int x = -size; x < size - 1; x++) {
-		for (int y = -size; y < size - 1; y++) {
-			for (int z = -size; z < size - 1; z++) {
-				std::string byteString = "";
-
-				byteString += marchingCubesValues[std::make_tuple(x + 1,  y + 1,  z)];
-				byteString += marchingCubesValues[std::make_tuple(x + 1,  y + 1,  z + 1)];
-				byteString += marchingCubesValues[std::make_tuple(x,  y + 1,  z + 1)];
-				byteString += marchingCubesValues[std::make_tuple(x,  y + 1,  z)];
-				byteString += marchingCubesValues[std::make_tuple(x + 1,  y,  z)];
-				byteString += marchingCubesValues[std::make_tuple(x + 1,  y,  z + 1)];
-				byteString += marchingCubesValues[std::make_tuple(x,  y,  z + 1)];
-				byteString += marchingCubesValues[std::make_tuple(x,  y,  z)];
-
-				// std::cout << byteString << std::endl;
-
-				std::bitset<8> activeVertices(byteString);
-				std::vector<float> marchingCubesVertices;
-
-				marchingCubesVertices = getMarchingCubes(activeVertices, glm::vec3(x, y, z));
-				originalVertices.insert(originalVertices.end(), marchingCubesVertices.begin(), marchingCubesVertices.end());
-			}
-		}
-	}
-
-    Shader lightingShader;
-	WorldObject testCube(originalVertices);
-	testCube.currentSettings = currentSettings;
-	testCube.objectShader = lightingShader;
-	testCube.initializeShader("shaders/lightingShaders/colors.vs", "shaders/lightingShaders/colors.fs");
-	testCube.addNormalizedTriangles();
-	testCube.objectLightingAttributes.lightPosition.second = glm::vec3(1.0f, 1.0f, 2.0f);
-	testCube.objectLightingAttributes.lightAmbient.second = glm::vec3(0.5, 0.5, 0.5);
-	testCube.objectLightingAttributes.lightDiffuse.second = glm::vec3(0.1f, 0.2f, 0.3f);
-	testCube.objectLightingAttributes.lightSpecular.second = glm::vec3(1.0f, 1.0f, 1.0f);
-
-	testCube.objectLightingAttributes.materialAmbient.second = glm::vec3(0.3f, 0.3f, 0.3f);
-	testCube.objectLightingAttributes.materialDiffuse.second = glm::vec3(1.0f, 0.5f, 0.31f);
-	testCube.objectLightingAttributes.materialSpecular.second = glm::vec3(0.5f, 0.5f, 0.5f);
-	testCube.objectLightingAttributes.materialShininess.second = 32.0f;
-
-	VBOVOA cubeVBOVOA;
-	cubeVBOVOA.genAndBindVBO(cubeVertices);
-	cubeVBOVOA.generateAndBindVertexArrays();
-	// std::cout << "cube VOA" << std::endl;
-	cubeVBOVOA.enableAttributes(0, 3);
 
 	Texture currentTexture;
 	currentTexture.loadTexture("textures/videoman.jpg");
@@ -196,56 +145,30 @@ int main()
 
         // input
         // -----
-        processInput(window, testCube, originalVertices);
+        processInput(window);
 
         // render
         // ------
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        // glBindTexture(GL_TEXTURE_2D, currentTexture.texture);
+ 
+		for (auto i : chunks) {
+			i.objectShaderValues.lightPosition.second = lightPos;
+			i.renderObjectToScreen(camera, glm::vec3(1.0f));
+		}
 
-		// for (auto i : cubePositions) {
-		testCube.objectLightingAttributes.lightPosition.second = lightPos;
-		testCube.renderObjectToScreen(camera, glm::vec3(0, 0, 0), glm::vec3(1.0f));
-		// }
+		lightCube.renderObjectToScreen(camera, glm::vec3(1.0f));
 
-		// pass projection matrix to shader (note that in this case it could change every frame)
-		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float) currentSettings.SCR_WIDTH / (float) currentSettings.SCR_HEIGHT, 0.1f, 100.0f);
-		glm::mat4 view = camera.GetViewMatrix();
-
-		glm::mat4 model = glm::mat4(1.0f);
-		const float radius = 32.0f;
-		// float lightX = sin(glfwGetTime() * 0.1) * radius;
-		// float lightZ = cos(glfwGetTime() * 0.1) * radius;
-		// lightPos = glm::vec3(lightX, 1.0f, lightZ);
-		lightPos.z = 10.0f;
-		model = glm::translate(model, lightPos);
-		model = glm::scale(model, glm::vec3(0.2f));
-
-		/////////////////////////////////////////////
-
-		// lighting cube shader bindings and transformations
-		lightCubeShader.use();
-		lightCubeShader.setMat4("projection", projection); // we will use same projection as before
-		lightCubeShader.setMat4("view", view); // we will use same view as before
-		lightCubeShader.setMat4("model", model);
-
-		glBindVertexArray(cubeVBOVOA.VAO);
-		glDrawArrays(GL_TRIANGLES, 0, 36);		
-
-        // thisAngle += 20 * deltaTime;
-		// lightPos.y += 0.2f * deltaTime;
-        // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
-        // -------------------------------------------------------------------------------
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
 
     // optional: de-allocate all resources once they've outlived their purpose:
     // ------------------------------------------------------------------------
-	testCube.deleteVertexArraysAndBuffers();
-    glDeleteVertexArrays(1, &cubeVBOVOA.VAO);
-    glDeleteBuffers(1, &cubeVBOVOA.VBO);
+	for (auto i : chunks) {
+		i.deleteVertexArraysAndBuffers();
+	}
+	lightCube.deleteVertexArraysAndBuffers();
 
     // glfw: terminate, clearing all previously allocated GLFW resources.
     // ------------------------------------------------------------------
@@ -253,7 +176,7 @@ int main()
     return 0;
 }
 
-void processInput(GLFWwindow* window, WorldObject testCube, std::vector<float> originalVertices) {
+void processInput(GLFWwindow* window) {
 	GLdouble xPos, yPos;
 	glfwGetCursorPos(window, &xPos, &yPos);
 
@@ -276,47 +199,46 @@ void processInput(GLFWwindow* window, WorldObject testCube, std::vector<float> o
 		camera.ProcessKeyboard(UP, deltaTime);
 	if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
 		camera.ProcessKeyboard(DOWN, deltaTime);
-	if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) {
-		for (int x = -4; x < 4; x++) {
-			for (int y = -4; y < 4; y++) {
-				for (int z = -4; z < 4; z++) {
-					marchingCubesValues[std::make_tuple(x, y, z)] = '0'; // falta volver a construir el original vertices del hashmap de valores
-					// testCube.worldObjectVBOVBA.rebindVBO(originalVertices);
-				}
-			}
-		}
+	// if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) {
+	// 	for (int x = (int) camera.Position.x - 2; x < (int) camera.Position.x + 2; x++) {
+	// 		for (int y = (int) camera.Position.y  - 2; y < (int) camera.Position.y + 2; y++) {
+	// 			for (int z = (int) camera.Position.z - 2; z < (int) camera.Position.z + 2; z++) {
+	// 				marchingCubesValues[std::make_tuple(x, y, z)] = '0'; // falta volver a construir el original vertices del hashmap de valores
+	// 				// testCube.worldObjectVBOVBA.rebindVBO(originalVertices);
+	// 			}
+	// 		}
+	// 	}
 
-		originalVertices = {};
+	// 	originalVertices = {};
 
-		for (int x = -12; x < 12 - 1; x++) {
-			for (int y = -12; y < 12 - 1; y++) {
-				for (int z = -12; z < 12 - 1; z++) {
-					std::string byteString = "";
+	// 	for (int x = -5; x < 5 - 1; x++) {
+	// 		for (int y = -5; y < 5 - 1; y++) {
+	// 			for (int z = -5; z < 5 - 1; z++) {
+	// 				std::string byteString = "";
 
-					byteString += marchingCubesValues[std::make_tuple(x + 1,  y + 1,  z)];
-					byteString += marchingCubesValues[std::make_tuple(x + 1,  y + 1,  z + 1)];
-					byteString += marchingCubesValues[std::make_tuple(x,  y + 1,  z + 1)];
-					byteString += marchingCubesValues[std::make_tuple(x,  y + 1,  z)];
-					byteString += marchingCubesValues[std::make_tuple(x + 1,  y,  z)];
-					byteString += marchingCubesValues[std::make_tuple(x + 1,  y,  z + 1)];
-					byteString += marchingCubesValues[std::make_tuple(x,  y,  z + 1)];
-					byteString += marchingCubesValues[std::make_tuple(x,  y,  z)];
+	// 				byteString += marchingCubesValues[std::make_tuple(x + 1,  y + 1,  z)];
+	// 				byteString += marchingCubesValues[std::make_tuple(x + 1,  y + 1,  z + 1)];
+	// 				byteString += marchingCubesValues[std::make_tuple(x,  y + 1,  z + 1)];
+	// 				byteString += marchingCubesValues[std::make_tuple(x,  y + 1,  z)];
+	// 				byteString += marchingCubesValues[std::make_tuple(x + 1,  y,  z)];
+	// 				byteString += marchingCubesValues[std::make_tuple(x + 1,  y,  z + 1)];
+	// 				byteString += marchingCubesValues[std::make_tuple(x,  y,  z + 1)];
+	// 				byteString += marchingCubesValues[std::make_tuple(x,  y,  z)];
 
-					// std::cout << byteString << std::endl;
+	// 				// std::cout << byteString << std::endl;
 
-					std::bitset<8> activeVertices(byteString);
-					std::vector<float> marchingCubesVertices;
+	// 				std::bitset<8> activeVertices(byteString);
+	// 				std::vector<float> marchingCubesVertices;
 
-					marchingCubesVertices = getMarchingCubes(activeVertices, glm::vec3(x, y, z));
-					originalVertices.insert(originalVertices.end(), marchingCubesVertices.begin(), marchingCubesVertices.end());
-				}
-			}
-		}
+	// 				marchingCubesVertices = getMarchingCubes(activeVertices, glm::vec3(x, y, z));
+	// 				originalVertices.insert(originalVertices.end(), marchingCubesVertices.begin(), marchingCubesVertices.end());
+	// 			}
+	// 		}
+	// 	}
 	
-		testCube.verticesVector = originalVertices;
-		testCube.floatsPerTriangle = 3;
-		testCube.addNormalizedTriangles();
-		testCube.bindVBOVBA();
-		// testCube.worldObjectVBOVBA.rebindVBO(originalVertices);
-	}
+	// 	testCube.verticesVector = originalVertices;
+	// 	testCube.floatsPerTriangle = 3;
+	// 	testCube.addNormalizedTriangles();
+	// 	testCube.rebindVBOWrapper();
+	// }
 }
