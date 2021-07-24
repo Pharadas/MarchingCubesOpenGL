@@ -18,7 +18,7 @@ public:
     unsigned int ID;
 	mutable std::unordered_map<std::string, GLint> m_UniformLocationCache;
 
-    Shader(const char* vertexPath, const char* fragmentPath, const char* geometryPath = nullptr)
+    void bindShader(const char* vertexPath, const char* fragmentPath, const char* geometryPath = nullptr)
     {
         // 1. retrieve the vertex/fragment source code from filePath
         std::string vertexCode;
