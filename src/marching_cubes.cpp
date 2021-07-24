@@ -6,7 +6,7 @@
 
 #include <iostream>
 
-glm::vec3 verticesPositions[] = {
+glm::vec3 verticesPositions[8] = {
 	glm::vec3(-0.5, -0.5, -0.5),
 	glm::vec3(-0.5, -0.5, 0.5),
 	glm::vec3(0.5, -0.5, 0.5),
@@ -18,7 +18,7 @@ glm::vec3 verticesPositions[] = {
 	glm::vec3(0.5, 0.5, -0.5),
 };
 
-std::pair<int, int> edges[] = {
+std::pair<int, int> edges[12] = {
 	std::make_pair(0, 1),
 	std::make_pair(1, 2),
 	std::make_pair(2, 3),
