@@ -7,68 +7,52 @@
 #include <vector>
 #include <shader_s.h>
 #include <string>
-#include <lightingShaderStruct.h>
 #include <camera.h>
 #include <settings.h>
 
 class WorldObject {
-	private:
+	protected:
+	int numOfTriangles;
+	Shader objectShader;
+	VBOVOA worldObjectVBOVBA;
+	OpenGLSettings currentSettings;
 
 	public:
 	int floatsPerTriangle = 3;
-	VBOVOA worldObjectVBOVBA;
-	Shader objectShader;
-	LightingShaderAttributes objectLightingAttributes;
-	OpenGLSettings currentSettings;
+	float rotation = 0.0f;
 	std::vector<float> verticesVector;
 	glm::vec3 position = glm::vec3(0, 0, 0);
-	float rotation;
 
-	WorldObject(std::vector<float> initialVerticesVector) {
-		verticesVector = initialVerticesVector;
+	WorldObject(std::vector<float> initialVerticesVector, const char* vertexPath, const char* fragmentPath, OpenGLSettings initialSettings, const char* geometryPath = nullptr) {
+		this->verticesVector = initialVerticesVector;
 		bindVBOVBA();
+		worldObjectVBOVBA.enableAttributes(0, floatsPerTriangle);
+		objectShader.bindShader(vertexPath, fragmentPath, geometryPath);
+		this->currentSettings = initialSettings;
+		numOfTriangles = verticesVector.size() / floatsPerTriangle;
 	}
 
-	void renderObjectToScreen(Camera camera, glm::vec3 i, glm::vec3 scale) {
+	virtual void renderObjectToScreen(Camera camera, glm::vec3 scale = glm::vec3(1, 1, 1)) {
+		// tell opengl's context to use this shader
 		objectShader.use();
 		objectShader.setVec3("viewPos", camera.Position);
-		objectShader.setVec3(objectLightingAttributes.lightPosition.first,
-							 objectLightingAttributes.lightPosition.second);
-		objectShader.setVec3(objectLightingAttributes.lightAmbient.first,
-							 objectLightingAttributes.lightAmbient.second);
-		objectShader.setVec3(objectLightingAttributes.lightDiffuse.first,
-							 objectLightingAttributes.lightDiffuse.second);
-		objectShader.setVec3(objectLightingAttributes.lightSpecular.first,
-							 objectLightingAttributes.lightSpecular.second);
 
-		objectShader.setVec3(objectLightingAttributes.materialAmbient.first,
-							 objectLightingAttributes.materialAmbient.second);
-		objectShader.setVec3(objectLightingAttributes.materialDiffuse.first, 
-							 objectLightingAttributes.materialDiffuse.second);
-		objectShader.setVec3(objectLightingAttributes.materialSpecular.first,
-							 objectLightingAttributes.materialSpecular.second);
-		objectShader.setFloat(objectLightingAttributes.materialShininess.first,
-							 objectLightingAttributes.materialShininess.second);
-
+		// get necessary matrices for multiplications we'll need later on
 		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float) currentSettings.SCR_WIDTH / (float) currentSettings.SCR_HEIGHT, 0.1f, 100.0f);
 		glm::mat4 view = camera.GetViewMatrix();
 		glm::mat4 model = glm::mat4(1.0f);
-		model = glm::translate(model, i);
+		model = glm::translate(model, position);
 		model = glm::scale(model, scale);
-		model = glm::rotate(model, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		// model = glm::rotate(model, glm::radians(rotation), glm::vec3(0.0f, 1.0f, 0.0f));
 
+		// pass these values to the shader's uniforms
 		objectShader.setMat4("projection", projection);
 		objectShader.setMat4("view", view);
 		objectShader.setMat4("model", model);
 
+		// tell opengl to use this object's vbo to allow us to draw the triangles
 		glBindVertexArray(worldObjectVBOVBA.VAO);
-		glDrawArrays(GL_TRIANGLES, 0, (int) verticesVector.size() / floatsPerTriangle);
-	}
-
-	// wrapper function for previous shader constructor
-	// ------------------------------------------------
-	void initializeShader(const char* vertexPath, const char* fragmentPath, const char* geometryPath = nullptr) {
-		objectShader.bindShader(vertexPath, fragmentPath, geometryPath);
+		glDrawArrays(GL_TRIANGLES, 0, numOfTriangles);
 	}
 
 	void bindVBOVBA() {
@@ -76,6 +60,12 @@ class WorldObject {
 		worldObjectVBOVBA.generateAndBindVertexArrays();
 	}
 
+	void rebindVBOWrapper() {
+		worldObjectVBOVBA.rebindVBO(verticesVector);
+	}
+
+	// Create vector<float> of object's vertices values with their normals and update enabled attributes
+	// -------------------------------------------------------------------------------------------------
 	void addNormalizedTriangles() {
 		std::vector<float> normalizedVertices {};
 		glm::vec3 v1, v2, v3, normalVector;
@@ -113,13 +103,15 @@ class WorldObject {
 			normalizedVertices.push_back(normalVector.z);
 		}
 
-	verticesVector = normalizedVertices;
-	floatsPerTriangle += 3;
+		verticesVector = normalizedVertices;
+		floatsPerTriangle += 3;
+		numOfTriangles = verticesVector.size() / floatsPerTriangle;
 
-	worldObjectVBOVBA.rebindVBO(verticesVector);
+		worldObjectVBOVBA.rebindVBO(verticesVector);
 
-	worldObjectVBOVBA.enableAttributes(0, floatsPerTriangle);
-	worldObjectVBOVBA.enableAttributes(3, floatsPerTriangle);
+		worldObjectVBOVBA.numOfAttributes = 0;
+		worldObjectVBOVBA.enableAttributes(0, floatsPerTriangle);
+		worldObjectVBOVBA.enableAttributes(3, floatsPerTriangle);
 	}
 
 	void deleteVertexArraysAndBuffers() {
@@ -131,7 +123,6 @@ class WorldObject {
 	glm::vec3 GetNormal(glm::vec3 v1, glm::vec3 v2, glm::vec3 v3) {
 		return glm::normalize(glm::cross(v1 - v2, v2 - v3));
 	}
-
 };
 
 #endif
