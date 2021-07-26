@@ -18,6 +18,7 @@
 #include <map>
 #include <tuple>
 
+#include <gameplay_functions/line_triangle_intersection.h>
 #include <texture.h>
 #include <VBOVOA.h>
 #include <setup.h> 
@@ -28,8 +29,6 @@
 #include <world_building/marching_cubes.h>
 #include <world_building/chunk.h>
 
-// void mouse_callback(GLFWwindow* window, double xpos, double ypos);
-// void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow* window);
 glm::vec3 GetNormal(glm::vec3 v1, glm::vec3 v2, glm::vec3 v3);
 
@@ -38,7 +37,7 @@ OpenGLSettings currentSettings;
 float thisAngle = 0.0;
 
 // camera
-Camera camera(glm::vec3(0.0f, 0.0f, 0.0f));
+Camera camera(glm::vec3(0.0f, 0.0f, -3.0f));
 Setup thisSetup;
 
 // timing
@@ -47,7 +46,6 @@ float lastFrame = 0.0f;
 
 // lighting
 glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
-std::map<std::tuple<int, int, int>, char> marchingCubesValues = {};
 
 int main()
 {
@@ -68,18 +66,18 @@ int main()
         -0.5f,  0.5f, -0.5f, // 0.0f,  0.0f, -1.0f,
         -0.5f, -0.5f, -0.5f, // 0.0f,  0.0f, -1.0f,
 
+         0.5f,  0.5f,  0.5f, // 0.0f,  0.0f,  1.0f,
         -0.5f, -0.5f,  0.5f, // 0.0f,  0.0f,  1.0f,
-         0.5f, -0.5f,  0.5f, // 0.0f,  0.0f,  1.0f,
-         0.5f,  0.5f,  0.5f, // 0.0f,  0.0f,  1.0f,
-         0.5f,  0.5f,  0.5f, // 0.0f,  0.0f,  1.0f,
         -0.5f,  0.5f,  0.5f, // 0.0f,  0.0f,  1.0f,
+         0.5f, -0.5f,  0.5f, // 0.0f,  0.0f,  1.0f,
         -0.5f, -0.5f,  0.5f, // 0.0f,  0.0f,  1.0f,
+         0.5f,  0.5f,  0.5f, // 0.0f,  0.0f,  1.0f,
 
-        -0.5f,  0.5f,  0.5f, // -1.0f,  0.0f,  0.0f,
         -0.5f,  0.5f, -0.5f, // -1.0f,  0.0f,  0.0f,
-        -0.5f, -0.5f, -0.5f, // -1.0f,  0.0f,  0.0f,
+        -0.5f,  0.5f,  0.5f, // -1.0f,  0.0f,  0.0f,
         -0.5f, -0.5f, -0.5f, // -1.0f,  0.0f,  0.0f,
         -0.5f, -0.5f,  0.5f, // -1.0f,  0.0f,  0.0f,
+        -0.5f, -0.5f, -0.5f, // -1.0f,  0.0f,  0.0f,
         -0.5f,  0.5f,  0.5f, // -1.0f,  0.0f,  0.0f,
 
          0.5f,  0.5f,  0.5f, // 1.0f,  0.0f,  0.0f,
@@ -89,11 +87,11 @@ int main()
          0.5f, -0.5f,  0.5f, // 1.0f,  0.0f,  0.0f,
          0.5f,  0.5f,  0.5f, // 1.0f,  0.0f,  0.0f,
 
-        -0.5f, -0.5f, -0.5f, // 0.0f, -1.0f,  0.0f,
          0.5f, -0.5f, -0.5f, // 0.0f, -1.0f,  0.0f,
-         0.5f, -0.5f,  0.5f, // 0.0f, -1.0f,  0.0f,
+        -0.5f, -0.5f, -0.5f, // 0.0f, -1.0f,  0.0f,
          0.5f, -0.5f,  0.5f, // 0.0f, -1.0f,  0.0f,
         -0.5f, -0.5f,  0.5f, // 0.0f, -1.0f,  0.0f,
+         0.5f, -0.5f,  0.5f, // 0.0f, -1.0f,  0.0f,
         -0.5f, -0.5f, -0.5f, // 0.0f, -1.0f,  0.0f,
 
         -0.5f,  0.5f, -0.5f, // 0.0f,  1.0f,  0.0f,
@@ -115,23 +113,42 @@ int main()
 	noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2S);
 	noise.SetSeed(1);
 	noise.SetNoiseType(FastNoiseLite::NoiseType_ValueCubic);
-	noise.SetFractalOctaves(1);
-	noise.SetFrequency(1);
+	noise.SetFractalOctaves(4);
+	noise.SetFrequency(0.25);
 
-	std::vector<LightingShaderObject> chunks = {};
-	int numOfChunks = 4;
-	for (int x = -numOfChunks; x < numOfChunks; x++) {
-		for (int y = -numOfChunks; y < numOfChunks; y++) {
-			for (int z = -numOfChunks; z < numOfChunks; z++) {
-				chunks.push_back(buildChunk(glm::vec3(x * 5, y * 5, z * 5), noise, 5, currentSettings));
-				// chunks.addNormalizedTriangles();
-				// LightingShaderObject testCube = buildChunk(glm::vec3(0, 0, 0), noise, 5, currentSettings);
-			}
-		}
-	}
+	std::vector<WorldObject> chunks = {};
+	int renderDistance = 1;
+	int chunkSize = 5;
 
-	Texture currentTexture;
-	currentTexture.loadTexture("textures/videoman.jpg");
+	// for (int x = -renderDistance; x < renderDistance; x++) {
+	// 	// chunks.push_back(buildChunk(glm::vec3(x * chunkSize, 0.0f, 0.0f), noise, chunkSize, currentSettings));
+	// 	for (int y = -renderDistance; y < renderDistance; y++) {
+	// 			chunks.push_back(buildChunk(glm::vec3(x, y, z), noise, chunkSize, currentSettings));
+	// 		for (int z = -renderDistance; z < renderDistance; z++) {
+	// 		}
+	// 	}
+	// }
+
+	chunks.push_back(buildChunk(glm::vec3(0, 0, 0), noise, chunkSize, currentSettings));
+
+	std::vector<float> singleTriangleVertices = {
+		 0.5f,  0.5f,  0.5f, // 0.0f,  0.0f, -1.0f,
+        -0.5f,  0.5f,  0.5f, // 0.0f,  0.0f, -1.0f,
+        -0.5f, -0.5f,  0.5f, // 0.0f,  0.0f, -1.0f,
+	};
+
+	// WorldObject testTriangle(singleTriangleVertices, "shaders/vertexShader.vs", "shaders/fragmentShader.fs", currentSettings);
+	// testTriangle.addUVs();
+	// testTriangle.position.x += 1;
+
+	// chunks.push_back(buildChunk(glm::vec3(0, 0, 0), noise, chunkSize, currentSettings));
+	WorldObject rayHitObject(cubeVertices, "shaders/vertexShader.vs", "shaders/fragmentShader.fs", currentSettings);
+
+	Texture currentTexture("textures/videoman.jpg");
+	// testTriangle.objectShader.use();
+	// testTriangle.objectShader.setInt("texture1", 0);
+	chunks[0].objectShader.use();
+	chunks[0].objectShader.setInt("texture1", 0);
 
     // render loop
     // -----------
@@ -151,14 +168,32 @@ int main()
         // ------
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
- 
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, currentTexture.texture);
+
+		std::pair<bool, glm::vec3> hitRayPosition = meshRayCasting(camera.Position, 
+																   glm::normalize(camera.Front),
+																   chunks[0].verticesVector,
+																   chunks[0].floatsPerTriangle,
+																   chunks[0].position);
+
+		if (hitRayPosition.first) {
+			rayHitObject.position = hitRayPosition.second;
+			rayHitObject.renderObjectToScreen(camera, glm::vec3(0.1f));
+		}
+
+		// testTriangle.renderObjectToScreen(camera, glm::vec3(1.0f));
+
+		// render all objects
 		for (auto i : chunks) {
-			i.objectShaderValues.lightPosition.second = lightPos;
+			// i.objectShaderValues.lightPosition.second = lightPos;
 			i.renderObjectToScreen(camera, glm::vec3(1.0f));
 		}
 
 		lightCube.renderObjectToScreen(camera, glm::vec3(1.0f));
 
+		// swap current buffer and get events
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
