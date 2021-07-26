@@ -12,7 +12,7 @@ class Texture {
 		int width, height, nrChannels;
 		// unsigned char *data;
 
-		void loadTexture(std::string texturePath) {
+		Texture (std::string texturePath) {
 			// has to be const char* to be usable by stbi_load()
 			const char* usableTexturePath = texturePath.c_str();
 
@@ -28,7 +28,7 @@ class Texture {
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 			// load image, create texture and generate mipmaps
 			// The FileSystem::getPath(...) is part of the GitHub repository so we can find files on any IDE/platform; replace it with your own image path.
-			unsigned char* data = stbi_load("textures/videoman.jpg", &width, &height, &nrChannels, 0);
+			unsigned char* data = stbi_load(usableTexturePath, &width, &height, &nrChannels, 0);
 
 			if (data)
 			{
