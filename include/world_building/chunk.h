@@ -13,15 +13,17 @@
 
 // Builds marching cubes chunk and returns world object with
 // the chunk as its mesh
-LightingShaderObject buildChunk(glm::vec3 position, FastNoiseLite noiseObject, int chunkSize, OpenGLSettings currentSettings) {
+WorldObject buildChunk(glm::vec3 position, FastNoiseLite noiseObject, int chunkSize, OpenGLSettings currentSettings) {
 	std::vector<float> chunkVertices = {};
 	std::map<std::tuple<int, int, int>, char> marchingCubesValues = {};
 
+	glm::vec3 globalChunkCoords(position.x * chunkSize, position.y * chunkSize, position.z * chunkSize);
+
 	// generate hashmap of chunk values using perlin noise
-	for (int x = -chunkSize + position.x; x < chunkSize + position.x ; x++) {
-		for (int y = -chunkSize + position.y; y < chunkSize + position.y ; y++) {
-			for (int z = -chunkSize + position.z; z < chunkSize + position.z ; z++) {
-				if (noiseObject.GetNoise((float) x, (float) y, (float) z) > -0.0) {
+	for (int x = -chunkSize * 0.5; x < chunkSize * 0.5 + 1; x++) {
+		for (int y = -chunkSize * 0.5; y < chunkSize * 0.5 + 1; y++) {
+			for (int z = -chunkSize * 0.5; z < chunkSize * 0.5 + 1; z++) {
+				if (noiseObject.GetNoise((float) x + globalChunkCoords.x, (float) y + globalChunkCoords.y, (float) z + globalChunkCoords.z) > -0.0) {
 					marchingCubesValues[std::make_tuple(x, y, z)] = '1';
 				} else {
 					marchingCubesValues[std::make_tuple(x, y, z)] = '0';
@@ -31,9 +33,9 @@ LightingShaderObject buildChunk(glm::vec3 position, FastNoiseLite noiseObject, i
 	}
 
 	// build vertices from generated hashmap
-	for (int x = -chunkSize + position.x; x < chunkSize + position.x  - 1; x++) {
-		for (int y = -chunkSize + position.y; y < chunkSize + position.y  - 1; y++) {
-			for (int z = -chunkSize + position.z; z < chunkSize + position.z  - 1; z++) {
+	for (int x = -chunkSize * 0.5; x < chunkSize * 0.5; x++) {
+		for (int y = -chunkSize * 0.5; y < chunkSize * 0.5; y++) {
+			for (int z = -chunkSize * 0.5; z < chunkSize * 0.5; z++) {
 				std::string byteString = "";
 
 				// comentario innecesario
@@ -55,9 +57,10 @@ LightingShaderObject buildChunk(glm::vec3 position, FastNoiseLite noiseObject, i
 		}
 	}
 
-	LightingShaderObject chunkObject(chunkVertices, "shaders/lightingShaders/colors.vs", "shaders/lightingShaders/colors.fs", currentSettings);
-	chunkObject.position = position;
-	chunkObject.addNormalizedTriangles();
+	WorldObject chunkObject(chunkVertices, "shaders/vertexShader.vs", "shaders/fragmentShader.fs", currentSettings);
+	chunkObject.position = position * glm::vec3(chunkSize);
+	chunkObject.addUVs();
+	// chunkObject.addNormalizedTriangles();
 	return chunkObject;
 }
 
