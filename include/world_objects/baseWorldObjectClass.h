@@ -13,11 +13,11 @@
 class WorldObject {
 	protected:
 	int numOfTriangles;
-	Shader objectShader;
 	VBOVOA worldObjectVBOVBA;
 	OpenGLSettings currentSettings;
 
 	public:
+	Shader objectShader; // put it back in private after test dumbshit
 	int floatsPerTriangle = 3;
 	float rotation = 0.0f;
 	std::vector<float> verticesVector;
@@ -38,7 +38,7 @@ class WorldObject {
 		objectShader.setVec3("viewPos", camera.Position);
 
 		// get necessary matrices for multiplications we'll need later on
-		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float) currentSettings.SCR_WIDTH / (float) currentSettings.SCR_HEIGHT, 0.1f, 100.0f);
+		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float) currentSettings.SCR_WIDTH / (float) currentSettings.SCR_HEIGHT, 0.01f, 100.0f);
 		glm::mat4 view = camera.GetViewMatrix();
 		glm::mat4 model = glm::mat4(1.0f);
 		model = glm::translate(model, position);
@@ -71,7 +71,7 @@ class WorldObject {
 		glm::vec3 v1, v2, v3, normalVector;
 		int originalVerticesSize = (int) verticesVector.size();
 
-		for (int i = 0; i < originalVerticesSize; i += (floatsPerTriangle*2) + 3) {
+		for (int i = 0; i < originalVerticesSize; i += floatsPerTriangle*3) {
 			v1 = glm::vec3(verticesVector[i], verticesVector[i + 1], verticesVector[i + 2]);
 			v2 = glm::vec3(verticesVector[i + 3], verticesVector[i + 4], verticesVector[i + 5]);
 			v3 = glm::vec3(verticesVector[i + 6], verticesVector[i + 7], verticesVector[i + 8]);
@@ -105,6 +105,44 @@ class WorldObject {
 
 		verticesVector = normalizedVertices;
 		floatsPerTriangle += 3;
+		numOfTriangles = verticesVector.size() / floatsPerTriangle;
+
+		worldObjectVBOVBA.rebindVBO(verticesVector);
+
+		worldObjectVBOVBA.numOfAttributes = 0;
+		worldObjectVBOVBA.enableAttributes(0, floatsPerTriangle);
+		worldObjectVBOVBA.enableAttributes(3, floatsPerTriangle);
+	}
+
+	void addUVs() {
+		std::vector<float> UVdVertices {};
+		int originalVerticesSize = (int) verticesVector.size();
+
+		for (int i = 0; i < originalVerticesSize; i += floatsPerTriangle * 3) {
+			UVdVertices.push_back(verticesVector[i    ]);
+			UVdVertices.push_back(verticesVector[i + 1]);
+			UVdVertices.push_back(verticesVector[i + 2]);
+
+			UVdVertices.push_back(0.0f);
+			UVdVertices.push_back(0.0f);
+
+			UVdVertices.push_back(verticesVector[i + 3]);
+			UVdVertices.push_back(verticesVector[i + 4]);
+			UVdVertices.push_back(verticesVector[i + 5]);
+
+			UVdVertices.push_back(1.0f);
+			UVdVertices.push_back(0.0f);
+
+			UVdVertices.push_back(verticesVector[i + 6]);
+			UVdVertices.push_back(verticesVector[i + 7]);
+			UVdVertices.push_back(verticesVector[i + 8]);
+			
+			UVdVertices.push_back(1.0f);
+			UVdVertices.push_back(1.0f);
+		}
+
+		verticesVector = UVdVertices;
+		floatsPerTriangle += 2;
 		numOfTriangles = verticesVector.size() / floatsPerTriangle;
 
 		worldObjectVBOVBA.rebindVBO(verticesVector);
