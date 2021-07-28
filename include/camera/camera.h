@@ -4,6 +4,7 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <GLFW/glfw3.h>
 
 #include <vector>
 
@@ -20,10 +21,10 @@ enum Camera_Movement {
 // Default camera values
 const float YAW         = -90.0f;
 const float PITCH       =  0.0f;
-const float SPEED       =  7.0f;
+const float SPEED       =  3.0f;
 const float SENSITIVITY =  0.2f;
 const float ZOOM        =  90.0f;
-bool firstMouse = true;
+// bool firstMouse = true;
 
 // An abstract camera class that processes input and calculates the corresponding Euler Angles, Vectors and Matrices for use in OpenGL
 class Camera
@@ -95,12 +96,12 @@ public:
     // processes input received from a mouse input system. Expects the offset value in both the x and y direction.
     void ProcessMouseMovement(float xPos, float yPos, GLboolean constrainPitch = true)
     {
-		if (firstMouse)
-		{
-			lastX = xPos;
-			lastY = yPos;
-			firstMouse = false;
-		}
+		// if (firstMouse)
+		// {
+		// 	lastX = xPos;
+		// 	lastY = yPos;
+		// 	firstMouse = false;
+		// }
 
 		float xoffset = xPos - lastX;
 		float yoffset = lastY - yPos; // reversed since y-coordinates go from bottom to top
@@ -164,12 +165,12 @@ public:
 	// -------------------------------------------------------
 	void mouse_callback_wrapper(GLFWwindow* window, double xpos, double ypos)
 	{
-		if (firstMouse)
-		{
-			lastX = xpos;
-			lastY = ypos;
-			firstMouse = false;
-		}
+		// if (firstMouse)
+		// {
+		// 	lastX = xpos;
+		// 	lastY = ypos;
+		// 	firstMouse = false;
+		// }
 
 		float xoffset = xpos - lastX;
 		float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
