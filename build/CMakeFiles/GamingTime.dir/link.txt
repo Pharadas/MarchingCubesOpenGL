@@ -1,0 +1,3 @@
+"C:\Program Files\CMake\bin\cmake.exe" -E rm -f CMakeFiles\GamingTime.dir/objects.a
+C:\ProgramData\chocolatey\bin\ar.exe qc CMakeFiles\GamingTime.dir/objects.a @CMakeFiles\GamingTime.dir\objects1.rsp
+C:\ProgramData\chocolatey\bin\g++.exe -Wl,--whole-archive CMakeFiles\GamingTime.dir/objects.a -Wl,--no-whole-archive -o build\GamingTime.exe -Wl,--out-implib,libGamingTime.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles\GamingTime.dir\linklibs.rsp

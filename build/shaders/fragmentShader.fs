@@ -5,7 +5,7 @@
 // uniform sampler2D texture1;
 // void main()
 // {
-// 	vec2 st = TexCoord.xy * 2.32;
+// 	vec2 st = TexCoord.xy * 1;
 // 	// vec2 st = gl_FragCoord.xy * 0.032;
 // 	float angle = 0.;
 // 	mat2 rot = mat2(cos(angle), -sin(angle),sin(angle), cos(angle));

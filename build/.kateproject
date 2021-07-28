@@ -1,0 +1,20 @@
+{
+	"name": "GamingTime@build",
+	"directory": "C:/Users/david/Documents/repos/openglMarchingCubes",
+	"files": [ { "git": 1 } ],
+	"build": {
+		"directory": "C:/Users/david/Documents/repos/openglMarchingCubes/build",
+		"default_target": "all",
+		"clean_target": "clean",
+		"build": "C:/MinGW/bin/mingw32-make.exe -C \"C:/Users/david/Documents/repos/openglMarchingCubes/build\"  all",
+		"clean": "C:/MinGW/bin/mingw32-make.exe -C \"C:/Users/david/Documents/repos/openglMarchingCubes/build\"  clean",
+		"quick": "C:/MinGW/bin/mingw32-make.exe -C \"C:/Users/david/Documents/repos/openglMarchingCubes/build\"  install",
+		"targets":[
+			 {"name":"all", "build_cmd":"C:/MinGW/bin/mingw32-make.exe -C \"C:/Users/david/Documents/repos/openglMarchingCubes/build\"  all"}
+			,{"name":"clean", "build_cmd":"C:/MinGW/bin/mingw32-make.exe -C \"C:/Users/david/Documents/repos/openglMarchingCubes/build\"  clean"}
+			,{"name":"GamingTime", "build_cmd":"C:/MinGW/bin/mingw32-make.exe -C \"C:/Users/david/Documents/repos/openglMarchingCubes/build\"  GamingTime"}
+			,{"name":"GamingTime/fast", "build_cmd":"C:/MinGW/bin/mingw32-make.exe -C \"C:/Users/david/Documents/repos/openglMarchingCubes/build\"  GamingTime/fast"}
+			,{"name":"edit_cache", "build_cmd":"C:/MinGW/bin/mingw32-make.exe -C \"C:/Users/david/Documents/repos/openglMarchingCubes/build\"  edit_cache"}
+			,{"name":"rebuild_cache", "build_cmd":"C:/MinGW/bin/mingw32-make.exe -C \"C:/Users/david/Documents/repos/openglMarchingCubes/build\"  rebuild_cache"}
+	] }
+}

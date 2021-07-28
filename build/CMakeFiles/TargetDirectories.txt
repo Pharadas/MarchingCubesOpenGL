@@ -1,0 +1,3 @@
+C:/Users/david/Documents/repos/openglMarchingCubes/build/CMakeFiles/GamingTime.dir
+C:/Users/david/Documents/repos/openglMarchingCubes/build/CMakeFiles/edit_cache.dir
+C:/Users/david/Documents/repos/openglMarchingCubes/build/CMakeFiles/rebuild_cache.dir

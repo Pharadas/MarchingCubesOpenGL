@@ -1,0 +1,1 @@
+  -LC:/Users/david/Documents/repos/openglMarchingCubes/lib  -lglfw3dll -lopengl32 -lglew32 -lfreeglut_static -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32 
