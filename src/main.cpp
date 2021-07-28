@@ -8,7 +8,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <shader_s.h>
-#include <camera.h>
+#include <camera/camera.h>
 
 #include <string>
 #include <vector>
@@ -24,10 +24,10 @@
 #include <setup.h> 
 #include <settings.h>
 #include <setup.h>
-#include <world_objects/baseWorldObjectClass.h>
-#include <world_objects/lightingShaderObjectClass.h>
+#include <world_objects/baseWorldObject.h>
+#include <world_objects/lightingShaderObject.h>
 #include <world_building/marching_cubes.h>
-#include <world_building/chunk.h>
+#include <world_building/chunk_object.h>
 
 void processInput(GLFWwindow* window);
 glm::vec3 GetNormal(glm::vec3 v1, glm::vec3 v2, glm::vec3 v3);
@@ -49,6 +49,7 @@ glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
 
 int main()
 {
+	std::cout << "fucking gamin here" << std::endl;
 	// settings
 	currentSettings.SCR_WIDTH = 1000;
 	currentSettings.SCR_HEIGHT = 1000;
@@ -129,7 +130,8 @@ int main()
 	// 	}
 	// }
 
-	chunks.push_back(buildChunk(glm::vec3(0, 0, 0), noise, chunkSize, currentSettings));
+	ChunkObject singleChunk(glm::vec3(0, 0, 0), noise, chunkSize, currentSettings);
+	// chunks.push_back(buildChunk(glm::vec3(0, 0, 0), noise, chunkSize, currentSettings));
 
 	std::vector<float> singleTriangleVertices = {
 		 0.5f,  0.5f,  0.5f, // 0.0f,  0.0f, -1.0f,
@@ -147,8 +149,10 @@ int main()
 	Texture currentTexture("textures/videoman.jpg");
 	// testTriangle.objectShader.use();
 	// testTriangle.objectShader.setInt("texture1", 0);
-	chunks[0].objectShader.use();
-	chunks[0].objectShader.setInt("texture1", 0);
+	// chunks[0].objectShader.use();
+	// chunks[0].objectShader.setInt("texture1", 0);
+	// singleChunk.chunkWorldObject.objectShader.use();
+	// singleChunk.chunkWorldObject.objectShader.setInt("texture1", 0);
 
     // render loop
     // -----------
@@ -172,24 +176,25 @@ int main()
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, currentTexture.texture);
 
-		std::pair<bool, glm::vec3> hitRayPosition = meshRayCasting(camera.Position, 
-																   glm::normalize(camera.Front),
-																   chunks[0].verticesVector,
-																   chunks[0].floatsPerTriangle,
-																   chunks[0].position);
+		// std::pair<bool, glm::vec3> hitRayPosition = meshRayCasting(camera.Position, 
+		// 														   glm::normalize(camera.Front),
+		// 														   singleChunk.chunkWorldObject.verticesVector,
+		// 														   singleChunk.chunkWorldObject.floatsPerTriangle,
+		// 														   singleChunk.chunkWorldObject.position);
 
-		if (hitRayPosition.first) {
-			rayHitObject.position = hitRayPosition.second;
-			rayHitObject.renderObjectToScreen(camera, glm::vec3(0.1f));
-		}
+		// if (hitRayPosition.first) {
+		// 	rayHitObject.position = hitRayPosition.second;
+		// 	rayHitObject.renderObjectToScreen(camera, glm::vec3(0.1f));
+		// }
 
 		// testTriangle.renderObjectToScreen(camera, glm::vec3(1.0f));
 
 		// render all objects
-		for (auto i : chunks) {
-			// i.objectShaderValues.lightPosition.second = lightPos;
-			i.renderObjectToScreen(camera, glm::vec3(1.0f));
-		}
+		// singleChunk.chunkWorldObject.renderObjectToScreen(camera, glm::vec3(1.0f));
+		// for (auto i : chunks) {
+		// 	// i.objectShaderValues.lightPosition.second = lightPos;
+		// 	i.renderObjectToScreen(camera, glm::vec3(1.0f));
+		// }
 
 		lightCube.renderObjectToScreen(camera, glm::vec3(1.0f));
 
@@ -200,10 +205,10 @@ int main()
 
     // optional: de-allocate all resources once they've outlived their purpose:
     // ------------------------------------------------------------------------
-	for (auto i : chunks) {
-		i.deleteVertexArraysAndBuffers();
-	}
-	lightCube.deleteVertexArraysAndBuffers();
+	// for (auto i : chunks) {
+	// 	i.deleteVertexArraysAndBuffers();
+	// }
+	// lightCube.deleteVertexArraysAndBuffers();
 
     // glfw: terminate, clearing all previously allocated GLFW resources.
     // ------------------------------------------------------------------
